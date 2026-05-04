@@ -1,9 +1,35 @@
-let loggingEnabled = false;
+const LOGGING_STORAGE_KEY = "pnl-dd-ratio-logging";
 
-// setTimeout(() => {
-//   loggingEnabled = false;
-//   console.log('[Extension] Logging disabled after 5 seconds');
-// }, 10000);
+let loggingEnabled = (() => {
+  try {
+    return localStorage.getItem(LOGGING_STORAGE_KEY) === "true";
+  } catch (_) {
+    return false;
+  }
+})();
+
+const setLoggingEnabled = (enabled) => {
+  loggingEnabled = !!enabled;
+  try {
+    localStorage.setItem(
+      LOGGING_STORAGE_KEY,
+      loggingEnabled ? "true" : "false",
+    );
+  } catch (_) {}
+  updateLoggingToggleDisplay();
+  if (loggingEnabled) {
+    console.log("[Extension] Logging enabled");
+  }
+};
+
+const updateLoggingToggleDisplay = () => {
+  const btn = document.getElementById("logging-toggle");
+  if (!btn) return;
+  btn.classList.toggle("active", loggingEnabled);
+  btn.title = loggingEnabled
+    ? "Disable console logging"
+    : "Enable console logging";
+};
 
 const extLog = (...args) => {
   if (loggingEnabled) {
@@ -37,7 +63,7 @@ const extWarn = (...args) => {
 
 const parseNumber = (text) => {
   if (!text) return null;
-  const cleaned = text.replace(/[^\d.-]/g, '');
+  const cleaned = text.replace(/[^\d.-−]/g, "").replace("−", "-");
   const num = parseFloat(cleaned);
   return isNaN(num) ? null : num;
 };
@@ -45,7 +71,7 @@ const parseNumber = (text) => {
 const logElement = (name, element, level = 0) => {
   if (!loggingEnabled) return;
 
-  const indent = '  '.repeat(level);
+  const indent = "  ".repeat(level);
   if (!element) {
     extLog(`${indent}[Extension] ${name}: null/undefined`);
     return;
@@ -53,11 +79,11 @@ const logElement = (name, element, level = 0) => {
 
   extGroup(`${indent}[Extension] ${name}:`);
   extLog(`${indent}  Tag:`, element.tagName);
-  extLog(`${indent}  ID:`, element.id || '(none)');
-  extLog(`${indent}  Classes:`, element.className || '(none)');
+  extLog(`${indent}  ID:`, element.id || "(none)");
+  extLog(`${indent}  Classes:`, element.className || "(none)");
   extLog(
     `${indent}  Text content:`,
-    (element.textContent || '').substring(0, 100)
+    (element.textContent || "").substring(0, 100),
   );
   extLog(`${indent}  Children count:`, element.children.length);
 
@@ -67,8 +93,8 @@ const logElement = (name, element, level = 0) => {
       const child = element.children[i];
       extLog(
         `${indent}    [${i}] ${child.tagName} - classes: ${
-          child.className || '(none)'
-        } - text: ${(child.textContent || '').substring(0, 50)}`
+          child.className || "(none)"
+        } - text: ${(child.textContent || "").substring(0, 50)}`,
       );
     }
     if (element.children.length > 10) {
@@ -102,97 +128,98 @@ const debounce = (func, wait) => {
 
 const findContainer = () => {
   try {
-    const bottomArea = document.getElementById('bottom-area');
+    const bottomArea = document.getElementById("bottom-area");
     if (!bottomArea) return null;
 
     const backtestingContainer = bottomArea.querySelector(
-      '.bottom-widgetbar-content.backtesting'
+      ".bottom-widgetbar-content.backtesting",
     );
     if (!backtestingContainer) return null;
 
     const reportContainer = backtestingContainer.querySelector(
-      '[class^="reportContainer-"]'
+      '[class^="reportContainer-"]',
     );
     if (!reportContainer) return null;
 
     const container = reportContainer.querySelector('[class^="container-"]');
     return container;
   } catch (e) {
-    extError('[Extension] Error finding container:', e);
+    extError("[Extension] Error finding container:", e);
     return null;
   }
 };
 
 const findPnLValue = () => {
-  extLog('[Extension] ========== Starting P&L search ==========');
+  extLog("[Extension] ========== Starting P&L search ==========");
   try {
     const container = findContainer();
-    logElement('Container', container, 0);
+    logElement("Container", container, 0);
 
     if (!container) {
-      extLog('[Extension] ❌ Container not found');
+      extLog("[Extension] ❌ Container not found");
       return null;
     }
 
-    const text = container.textContent || container.innerText || '';
-    extLog('[Extension] Container text content:', text);
+    const text = container.textContent || container.innerText || "";
+    extLog("[Extension] Container text content:", text);
 
-    const pnlMatch = text.match(/Total\s+P&L\s*([+-]?[\d,]+\.?\d*)/i);
+    const pnlMatch = text.match(/Total\s+P&L\s*([+-−]?[\d,]+\.?\d*)/i);
+    extLog(`pnlMatch ${pnlMatch}`);
     if (pnlMatch) {
       const value = parseNumber(pnlMatch[1]);
       if (value !== null) {
-        extLog('[Extension] ✅ P&L parsed value:', value);
+        extLog("[Extension] ✅ P&L parsed value:", value);
         return value;
       }
     }
 
-    extLog('[Extension] ❌ P&L pattern not found in text');
+    extLog("[Extension] ❌ P&L pattern not found in text");
   } catch (e) {
-    extError('[Extension] ❌ Error finding P&L:', e);
-    extError('[Extension] Stack:', e.stack);
+    extError("[Extension] ❌ Error finding P&L:", e);
+    extError("[Extension] Stack:", e.stack);
   }
-  extLog('[Extension] ========== End P&L search ==========');
+  extLog("[Extension] ========== End P&L search ==========");
   return null;
 };
 
 const findDrawdownValue = () => {
-  extLog('[Extension] ========== Starting Drawdown search ==========');
+  extLog("[Extension] ========== Starting Drawdown search ==========");
   try {
     const container = findContainer();
-    logElement('Container', container, 0);
+    logElement("Container", container, 0);
 
     if (!container) {
-      extLog('[Extension] ❌ Container not found');
+      extLog("[Extension] ❌ Container not found");
       return null;
     }
 
-    const text = container.textContent || container.innerText || '';
-    extLog('[Extension] Container text content:', text);
+    const text = container.textContent || container.innerText || "";
+    extLog("[Extension] Container text content:", text);
 
     const drawdownMatch = text.match(
-      /Max\s+equity\s+drawdown\s*([+-]?[\d,]+\.?\d*)/i
+      /Max\s+equity\s+drawdown\s*([+-]?[\d,]+\.?\d*)/i,
     );
     if (drawdownMatch) {
       const value = Math.abs(parseNumber(drawdownMatch[1]));
       if (value !== null && value > 0) {
-        extLog('[Extension] ✅ Drawdown parsed value:', value);
+        extLog("[Extension] ✅ Drawdown parsed value:", value);
         return value;
       }
     }
 
-    extLog('[Extension] ❌ Drawdown pattern not found in text');
+    extLog("[Extension] ❌ Drawdown pattern not found in text");
   } catch (e) {
-    extError('[Extension] ❌ Error finding drawdown:', e);
-    extError('[Extension] Stack:', e.stack);
+    extError("[Extension] ❌ Error finding drawdown:", e);
+    extError("[Extension] Stack:", e.stack);
   }
-  extLog('[Extension] ========== End Drawdown search ==========');
+  extLog("[Extension] ========== End Drawdown search ==========");
   return null;
 };
 
 let currentUrl = window.location.href;
 let sessionMax = null;
 const ratioHistory = [];
-const displayState = { mode: 'mini' };
+const displayState = { mode: "mini" };
 const runtime = {
   observer: null,
   fallbackObserver: null,
@@ -249,16 +276,16 @@ const teardownRuntime = () => {
     runtime.fallbackObserver = null;
   }
   if (runtime.popstateHandler) {
-    window.removeEventListener('popstate', runtime.popstateHandler);
+    window.removeEventListener("popstate", runtime.popstateHandler);
     runtime.popstateHandler = null;
   }
   if (runtime.dragHandlers) {
-    document.removeEventListener('mouseup', runtime.dragHandlers.dragEnd);
-    document.removeEventListener('mousemove', runtime.dragHandlers.drag);
+    document.removeEventListener("mouseup", runtime.dragHandlers.dragEnd);
+    document.removeEventListener("mousemove", runtime.dragHandlers.drag);
     if (runtime.container) {
       runtime.container.removeEventListener(
-        'mousedown',
-        runtime.dragHandlers.dragStart
+        "mousedown",
+        runtime.dragHandlers.dragStart,
       );
     }
     runtime.dragHandlers = null;
@@ -305,16 +332,16 @@ const updateSessionMax = (ratio) => {
 };
 
 const updateSessionMaxDisplay = () => {
-  const maxEl = document.getElementById('session-max-value');
+  const maxEl = document.getElementById("session-max-value");
   if (!maxEl) return;
 
   if (sessionMax === null) {
-    maxEl.textContent = '-';
-    maxEl.className = 'session-max-value';
+    maxEl.textContent = "-";
+    maxEl.className = "session-max-value";
   } else {
     maxEl.textContent = sessionMax.toFixed(2);
     maxEl.className =
-      'session-max-value ' + (sessionMax >= 0 ? 'positive' : 'negative');
+      "session-max-value " + (sessionMax >= 0 ? "positive" : "negative");
   }
 };
 
@@ -340,7 +367,7 @@ const addToHistory = (ratio, pnl, dd) => {
 };
 
 const updateHistoryDisplay = () => {
-  const historyEl = document.getElementById('ratio-history');
+  const historyEl = document.getElementById("ratio-history");
   if (!historyEl) return;
 
   if (ratioHistory.length === 0) {
@@ -352,54 +379,54 @@ const updateHistoryDisplay = () => {
     .slice()
     .reverse()
     .map((entry, index) => {
-      const timeStr = entry.time.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+      const timeStr = entry.time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
       const ratioClass =
-        entry.ratio >= 0 ? 'history-positive' : 'history-negative';
+        entry.ratio >= 0 ? "history-positive" : "history-negative";
       return `
       <div class="history-item">
         <span class="history-ratio ${ratioClass}">${entry.ratio.toFixed(
-        2
-      )}</span>
+          2,
+        )}</span>
         <span class="history-time">${timeStr}</span>
       </div>
     `;
     })
-    .join('');
+    .join("");
 
   historyEl.innerHTML = historyItems;
 };
 
 const toggleDisplayMode = () => {
-  displayState.mode = displayState.mode === 'mini' ? 'maxi' : 'mini';
+  displayState.mode = displayState.mode === "mini" ? "maxi" : "mini";
   updateDisplayMode();
 };
 
 const updateDisplayMode = () => {
-  const container = document.getElementById('pnl-dd-ratio-display');
+  const container = document.getElementById("pnl-dd-ratio-display");
   if (!container) return;
 
-  if (displayState.mode === 'mini') {
-    container.classList.add('mini-mode');
-    container.classList.remove('maxi-mode');
+  if (displayState.mode === "mini") {
+    container.classList.add("mini-mode");
+    container.classList.remove("maxi-mode");
   } else {
-    container.classList.add('maxi-mode');
-    container.classList.remove('mini-mode');
+    container.classList.add("maxi-mode");
+    container.classList.remove("mini-mode");
   }
 };
 
 const createRatioDisplay = () => {
-  const existing = document.getElementById('pnl-dd-ratio-display');
+  const existing = document.getElementById("pnl-dd-ratio-display");
   if (existing) {
     existing.remove();
   }
 
-  const container = document.createElement('div');
-  container.id = 'pnl-dd-ratio-display';
-  container.className = 'mini-mode';
+  const container = document.createElement("div");
+  container.id = "pnl-dd-ratio-display";
+  container.className = "mini-mode";
   container.innerHTML = `
     <button class="mode-toggle" id="mode-toggle" title="Toggle mini/maxi mode">⚬</button>
     <div class="ratio-header">P&L / Max DD Ratio</div>
@@ -427,27 +454,35 @@ const createRatioDisplay = () => {
         <div class="history-empty">No history yet</div>
       </div>
     </div>
+    <button class="logging-toggle" id="logging-toggle" title="Enable console logging">🐛</button>
     <button class="ratio-close" id="ratio-close">×</button>
   `;
 
   document.body.appendChild(container);
 
-  const closeBtn = container.querySelector('#ratio-close');
-  closeBtn.addEventListener('click', () => {
-    container.style.display = 'none';
+  const closeBtn = container.querySelector("#ratio-close");
+  closeBtn.addEventListener("click", () => {
+    container.style.display = "none";
   });
 
-  const modeToggle = container.querySelector('#mode-toggle');
-  modeToggle.addEventListener('click', (e) => {
+  const modeToggle = container.querySelector("#mode-toggle");
+  modeToggle.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleDisplayMode();
   });
 
-  const historyClear = container.querySelector('#history-clear');
-  historyClear.addEventListener('click', (e) => {
+  const historyClear = container.querySelector("#history-clear");
+  historyClear.addEventListener("click", (e) => {
     e.stopPropagation();
     reinitialize();
   });
+
+  const loggingToggle = container.querySelector("#logging-toggle");
+  loggingToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setLoggingEnabled(!loggingEnabled);
+  });
+  updateLoggingToggleDisplay();
 
   runtime.container = container;
   runtime.dragState.isDragging = false;
@@ -459,7 +494,12 @@ const createRatioDisplay = () => {
   runtime.dragState.yOffset = 0;
 
   const dragStart = (e) => {
-    if (e.target === closeBtn || e.target === historyClear) return;
+    if (
+      e.target === closeBtn ||
+      e.target === historyClear ||
+      e.target === loggingToggle
+    )
+      return;
     runtime.dragState.initialX = e.clientX - runtime.dragState.xOffset;
     runtime.dragState.initialY = e.clientY - runtime.dragState.yOffset;
     if (e.target === container || container.contains(e.target)) {
@@ -484,42 +524,42 @@ const createRatioDisplay = () => {
     }
   };
 
-  container.addEventListener('mousedown', dragStart);
-  document.addEventListener('mouseup', dragEnd);
-  document.addEventListener('mousemove', drag);
+  container.addEventListener("mousedown", dragStart);
+  document.addEventListener("mouseup", dragEnd);
+  document.addEventListener("mousemove", drag);
   runtime.dragHandlers = { dragStart, dragEnd, drag };
 
   return container;
 };
 
 const updateRatio = () => {
-  extLog('[Extension] ===== Updating ratio =====');
+  extLog("[Extension] ===== Updating ratio =====");
   const pnl = findPnLValue();
   const dd = findDrawdownValue();
-  extLog('[Extension] Final results - P&L:', pnl, 'Drawdown:', dd);
+  extLog("[Extension] Final results - P&L:", pnl, "Drawdown:", dd);
 
-  const ratioValueEl = document.getElementById('ratio-value');
-  const pnlValueEl = document.getElementById('pnl-value');
-  const ddValueEl = document.getElementById('dd-value');
+  const ratioValueEl = document.getElementById("ratio-value");
+  const pnlValueEl = document.getElementById("pnl-value");
+  const ddValueEl = document.getElementById("dd-value");
 
   if (!ratioValueEl || !pnlValueEl || !ddValueEl) return;
 
   if (pnl !== null) {
-    pnlValueEl.textContent = pnl.toLocaleString('en-US', {
+    pnlValueEl.textContent = pnl.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   } else {
-    pnlValueEl.textContent = 'Not found';
+    pnlValueEl.textContent = "Not found";
   }
 
   if (dd !== null) {
-    ddValueEl.textContent = dd.toLocaleString('en-US', {
+    ddValueEl.textContent = dd.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   } else {
-    ddValueEl.textContent = 'Not found';
+    ddValueEl.textContent = "Not found";
   }
 
   checkUrlChange();
@@ -528,14 +568,14 @@ const updateRatio = () => {
     const ratio = pnl / dd;
     ratioValueEl.textContent = ratio.toFixed(2);
     ratioValueEl.className =
-      'ratio-value ' + (ratio >= 0 ? 'positive' : 'negative');
+      "ratio-value " + (ratio >= 0 ? "positive" : "negative");
 
     updateSessionMax(ratio);
     addToHistory(ratio, pnl, dd);
     updateHistoryDisplay();
   } else {
-    ratioValueEl.textContent = 'N/A';
-    ratioValueEl.className = 'ratio-value';
+    ratioValueEl.textContent = "N/A";
+    ratioValueEl.className = "ratio-value";
   }
 };
 
@@ -557,7 +597,7 @@ const init = () => {
       try {
         updateRatio();
       } catch (e) {
-        extWarn('Extension: Error updating ratio', e);
+        extWarn("Extension: Error updating ratio", e);
       } finally {
         if (runtime.updateResetTimeoutId) {
           clearTimeout(runtime.updateResetTimeoutId);
@@ -581,7 +621,7 @@ const init = () => {
   });
 
   const observeBottomArea = () => {
-    const bottomArea = document.getElementById('bottom-area');
+    const bottomArea = document.getElementById("bottom-area");
     if (bottomArea) {
       runtime.observer.observe(bottomArea, {
         childList: true,
@@ -622,7 +662,7 @@ const init = () => {
   runtime.popstateHandler = () => {
     checkUrlChange();
   };
-  window.addEventListener('popstate', runtime.popstateHandler);
+  window.addEventListener("popstate", runtime.popstateHandler);
 
   runtime.lastUrl = window.location.href;
   runtime.urlCheckIntervalId = setInterval(() => {
@@ -637,20 +677,20 @@ const init = () => {
 };
 
 const startInit = () => {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      if (document.readyState === 'complete') {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      if (document.readyState === "complete") {
         setTimeout(init, 2000);
       } else {
-        window.addEventListener('load', () => {
+        window.addEventListener("load", () => {
           setTimeout(init, 2000);
         });
       }
     });
-  } else if (document.readyState === 'complete') {
+  } else if (document.readyState === "complete") {
     setTimeout(init, 2000);
   } else {
-    window.addEventListener('load', () => {
+    window.addEventListener("load", () => {
       setTimeout(init, 2000);
     });
   }
