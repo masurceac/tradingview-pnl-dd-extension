@@ -1,0 +1,241 @@
+#pnl-dd-ratio-display {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(26, 26, 46, 0.95);
+  border: 1px solid rgba(131, 131, 131, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 200px;
+  z-index: 10000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #d1d4dc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: move;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+#pnl-dd-ratio-display.mini-mode {
+  padding: 8px 12px;
+  min-width: auto;
+}
+
+#pnl-dd-ratio-display.mini-mode .ratio-header,
+#pnl-dd-ratio-display.mini-mode .ratio-details,
+#pnl-dd-ratio-display.mini-mode .ratio-history-section,
+#pnl-dd-ratio-display.mini-mode .ratio-close {
+  display: none;
+}
+
+#pnl-dd-ratio-display.mini-mode .ratio-value {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 24px;
+}
+
+#pnl-dd-ratio-display:hover {
+  border-color: rgba(131, 131, 131, 0.5);
+}
+
+.ratio-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #868993;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.ratio-value {
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  margin: 12px 0;
+  padding: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ratio-value.positive {
+  color: #26a69a;
+}
+
+.ratio-value.negative {
+  color: #ef5350;
+}
+
+.ratio-details {
+  margin-top: 12px;
+  border-top: 1px solid rgba(131, 131, 131, 0.2);
+  padding-top: 12px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  color: #868993;
+}
+
+.detail-value {
+  color: #d1d4dc;
+  font-weight: 500;
+}
+
+.session-max-item {
+  border-top: 1px solid rgba(131, 131, 131, 0.15);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.session-max-value {
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.session-max-value.positive {
+  color: #26a69a;
+}
+
+.session-max-value.negative {
+  color: #ef5350;
+}
+
+.mode-toggle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: transparent;
+  border: none;
+  color: #868993;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: all 0.2s;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d1d4dc;
+}
+
+#pnl-dd-ratio-display.mini-mode .mode-toggle {
+  top: 2px;
+  left: 2px;
+}
+
+.ratio-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #868993;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.ratio-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d1d4dc;
+}
+
+.ratio-history-section {
+  margin-top: 12px;
+  border-top: 1px solid rgba(131, 131, 131, 0.2);
+  padding-top: 12px;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6a6d75;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.history-clear {
+  background: transparent;
+  border: none;
+  color: #6a6d75;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.history-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d1d4dc;
+}
+
+.ratio-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-empty {
+  font-size: 11px;
+  color: #6a6d75;
+  font-style: italic;
+  text-align: center;
+  padding: 4px 0;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding: 3px 0;
+}
+
+.history-ratio {
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
+}
+
+.history-ratio.history-positive {
+  color: #4a9e91;
+}
+
+.history-ratio.history-negative {
+  color: #c94a47;
+}
+
+.history-time {
+  color: #6a6d75;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+}
+

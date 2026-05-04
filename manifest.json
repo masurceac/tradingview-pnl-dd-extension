@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "TradingView P&L/Drawdown Ratio",
+  "version": "1.0.0",
+  "description": "Calculates and displays total P&L to max equity drawdown ratio from TradingView",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.tradingview.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
